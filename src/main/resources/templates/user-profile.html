@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('用户主页 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- 用户信息 -->
+            <div class="card p-4 mb-4 text-center">
+                <div class="avatar-circle mx-auto mb-3" style="width:70px;height:70px;font-size:1.6rem;"
+                     th:text="${#strings.substring(target.username,0,1)}">U</div>
+                <h4 th:text="${target.username}">用户</h4>
+                <div class="text-muted">
+                    信用分 <strong th:text="${target.creditScore}">100</strong> ·
+                    平均评分 <strong th:text="${avgRating}">0</strong> 分 ·
+                    共 <strong th:text="${reviewCount}">0</strong> 条评价
+                </div>
+                <div class="mt-3" sec:authorize="isAuthenticated()">
+                    <a th:if="${currentUser != null and currentUser.id != target.id}"
+                       th:href="@{'/messages/' + ${target.id}}" class="btn btn-gradient btn-sm">私信TA</a>
+                </div>
+            </div>
+
+            <!-- 收到的评价 -->
+            <div class="card p-4">
+                <h5 class="mb-3">收到的评价</h5>
+                <div th:each="r : ${reviews}" class="border-bottom pb-3 mb-3">
+                    <div class="d-flex justify-content-between">
+                        <a th:href="@{'/users/' + ${r.reviewer.id}}" class="fw-semibold text-decoration-none text-dark"
+                           th:text="${r.reviewer.username}">评价人</a>
+                        <span class="text-warning">
+                            <th:block th:each="i : ${#numbers.sequence(1,5)}">
+                                <i class="bi" th:classappend="${i <= r.rating} ? 'bi-star-fill' : 'bi-star'"></i>
+                            </th:block>
+                        </span>
+                    </div>
+                    <p class="mb-1" th:text="${r.content} ?: '（无评价内容）'">评价内容</p>
+                    <small class="text-muted" th:text="${#temporals.format(r.createdAt, 'yyyy-MM-dd HH:mm')}">时间</small>
+                </div>
+                <div class="text-center text-muted py-3" th:if="${#lists.isEmpty(reviews)}">
+                    还没有收到评价
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

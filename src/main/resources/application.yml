@@ -1,0 +1,47 @@
+# 应用配置
+server:
+  port: 8080  # 服务器端口，默认8080
+
+spring:
+  # 本地私有配置（数据库密码等），该文件已被 .gitignore 忽略，不会提交到仓库
+  # 不存在时自动跳过，不影响启动
+  config:
+    import: optional:classpath:application-local.yml
+
+  # 数据库配置
+  datasource:
+    url: jdbc:mysql://localhost:3306/campus_trading?useSSL=false&serverTimezone=Asia/Shanghai&characterEncoding=utf-8
+    username: root
+    password: ${DB_PASSWORD:}  # 真实密码请写在 application-local.yml 中
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+  # JPA配置（用于数据库操作）
+  jpa:
+    hibernate:
+      ddl-auto: update  # 自动更新数据库表结构
+    show-sql: true  # 在控制台显示SQL语句（开发时便于调试）
+    properties:
+      hibernate:
+        format_sql: true  # 格式化SQL，便于阅读
+
+  # Thymeleaf配置（用于页面模板）
+  thymeleaf:
+    prefix: classpath:/templates/  # 模板文件位置
+    suffix: .html  # 模板文件后缀
+    cache: false  # 开发时关闭缓存，便于调试
+
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 10MB  # 单个文件最大10MB
+      max-request-size: 10MB  # 单次请求最大10MB
+
+# 日志配置
+logging:
+  level:
+    root: INFO
+    com.example.campus: DEBUG  # 显示项目包的详细日志
+
+# 自定义配置
+app:
+  upload-dir: uploads  # 商品图片上传目录（相对于项目运行目录）

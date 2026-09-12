@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('我的订单 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <ul class="nav nav-pills mb-4">
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${role == 'buyer'} ? 'active'"
+               th:href="@{/orders/bought}">我买到的</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" th:classappend="${role == 'seller'} ? 'active'"
+               th:href="@{/orders/sold}">我卖出的</a>
+        </li>
+    </ul>
+
+    <div class="card mb-3" th:each="o : ${orders}">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-5">
+                    <div class="d-flex">
+                        <img th:src="${o.product.imageUrl != null ? o.product.imageUrl : '/images/placeholder.svg'}"
+                             style="width:70px;height:70px;object-fit:cover;border-radius:6px;" class="me-3">
+                        <div>
+                            <a th:href="@{'/products/' + ${o.product.id}}" class="fw-semibold text-decoration-none text-dark"
+                               th:text="${o.product.title}">商品</a>
+                            <div class="text-danger fw-bold" th:text="'¥' + ${o.amount}">¥0</div>
+                            <small class="text-muted" th:text="'订单号：' + ${o.orderNumber}">订单号</small>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div th:if="${role == 'buyer'}">
+                        卖家：<a th:href="@{'/users/' + ${o.seller.id}}" th:text="${o.seller.username}">卖家</a>
+                    </div>
+                    <div th:if="${role == 'seller'}">
+                        买家：<a th:href="@{'/users/' + ${o.buyer.id}}" th:text="${o.buyer.username}">买家</a>
+                    </div>
+                    <div class="small text-muted" th:text="${#temporals.format(o.createdAt, 'yyyy-MM-dd HH:mm')}">时间</div>
+                </div>
+                <div class="col-md-2">
+                    <span class="badge fs-6"
+                          th:classappend="${o.status.name() == 'COMPLETED'} ? 'bg-success' : (${o.status.name() == 'CANCELLED'} ? 'bg-secondary' : (${o.status.name() == 'TRADING'} ? 'bg-primary' : 'bg-warning text-dark'))"
+                          th:text="${o.status.label}">状态</span>
+                </div>
+                <div class="col-md-2 text-end">
+                    <!-- 买家操作 -->
+                    <th:block th:if="${role == 'buyer'}">
+                        <form th:if="${o.status.name() == 'TRADING'}" th:action="@{'/orders/' + ${o.id} + '/complete'}"
+                              method="post" class="d-inline">
+                            <button class="btn btn-sm btn-gradient">确认收货</button>
+                        </form>
+                        <button th:if="${o.status.name() == 'COMPLETED' and !o.buyerReviewed}"
+                                class="btn btn-sm btn-outline-warning"
+                                data-bs-toggle="modal" th:data-bs-target="'#reviewModal' + ${o.id}">评价卖家</button>
+                        <span th:if="${o.status.name() == 'COMPLETED' and o.buyerReviewed}"
+                              class="text-success small">已评价</span>
+                    </th:block>
+
+                    <!-- 卖家操作 -->
+                    <th:block th:if="${role == 'seller'}">
+                        <form th:if="${o.status.name() == 'PENDING'}" th:action="@{'/orders/' + ${o.id} + '/confirm'}"
+                              method="post" class="d-inline">
+                            <button class="btn btn-sm btn-gradient">确认订单</button>
+                        </form>
+                        <button th:if="${o.status.name() == 'COMPLETED' and !o.sellerReviewed}"
+                                class="btn btn-sm btn-outline-warning"
+                                data-bs-toggle="modal" th:data-bs-target="'#reviewModal' + ${o.id}">评价买家</button>
+                        <span th:if="${o.status.name() == 'COMPLETED' and o.sellerReviewed}"
+                              class="text-success small">已评价</span>
+                    </th:block>
+                </div>
+            </div>
+            <div class="text-end mt-2" th:if="${o.status.name() != 'COMPLETED' and o.status.name() != 'CANCELLED'}">
+                <form th:action="@{'/orders/' + ${o.id} + '/cancel'}" method="post" class="d-inline"
+                      onsubmit="return confirm('确定取消该订单吗？');">
+                    <input type="hidden" name="from" th:value="${role}">
+                    <button class="btn btn-sm btn-link text-muted">取消订单</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="text-center text-muted py-5" th:if="${#lists.isEmpty(orders)}">
+        <i class="bi bi-receipt" style="font-size:3rem;"></i>
+        <p class="mt-2">暂无订单</p>
+    </div>
+</div>
+
+<!-- 评价弹窗 -->
+<th:block th:each="o : ${orders}">
+    <div class="modal fade" th:id="'reviewModal' + ${o.id}" tabindex="-1">
+        <div class="modal-dialog">
+            <form th:action="@{/reviews}" method="post" class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">评价</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <input type="hidden" name="orderId" th:value="${o.id}">
+                    <input type="hidden" name="from" th:value="${role}">
+                    <div class="mb-3">
+                        <label class="form-label">评分</label>
+                        <select name="rating" class="form-select" required>
+                            <option value="5">5 分 - 非常好</option>
+                            <option value="4">4 分 - 好</option>
+                            <option value="3">3 分 - 一般</option>
+                            <option value="2">2 分 - 差</option>
+                            <option value="1">1 分 - 非常差</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">评价内容</label>
+                        <textarea name="content" class="form-control" rows="3" placeholder="说说这次交易体验吧"></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                    <button type="submit" class="btn btn-gradient">提交评价</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</th:block>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

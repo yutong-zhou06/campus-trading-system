@@ -1,0 +1,34 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('我的消息 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <h4 class="mb-4">我的消息</h4>
+
+    <div class="card">
+        <div class="list-group list-group-flush">
+            <a th:each="c : ${contacts}" th:href="@{'/messages/' + ${c.id}}"
+               class="list-group-item list-group-item-action d-flex align-items-center">
+                <div class="avatar-circle me-3" th:text="${#strings.substring(c.username,0,1)}">U</div>
+                <div class="flex-grow-1">
+                    <div class="fw-semibold" th:text="${c.username}">联系人</div>
+                    <small class="text-muted">点击查看聊天记录</small>
+                </div>
+                <i class="bi bi-chevron-right text-muted"></i>
+            </a>
+        </div>
+        <div class="text-center text-muted py-5" th:if="${#lists.isEmpty(contacts)}">
+            <i class="bi bi-chat-dots" style="font-size:3rem;"></i>
+            <p class="mt-2">还没有聊天记录，去商品页联系卖家吧</p>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

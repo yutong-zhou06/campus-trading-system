@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('商品详情 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="row g-4">
+        <!-- 图片 -->
+        <div class="col-md-6">
+            <div class="card">
+                <img th:src="${product.imageUrl != null ? product.imageUrl : '/images/placeholder.svg'}"
+                     class="card-img-top" style="max-height:460px; object-fit:contain; background:#fff;" alt="商品图片">
+            </div>
+        </div>
+
+        <!-- 信息 -->
+        <div class="col-md-6">
+            <div class="card p-4">
+                <h3 th:text="${product.title}">商品标题</h3>
+                <div class="my-3">
+                    <span class="text-danger fw-bold" style="font-size:2rem;" th:text="'¥' + ${product.price}">¥0</span>
+                    <small class="text-muted text-decoration-line-through ms-2"
+                           th:if="${product.originalPrice != null}" th:text="'原价 ¥' + ${product.originalPrice}">原价</small>
+                </div>
+
+                <ul class="list-unstyled text-muted">
+                    <li class="mb-1"><i class="bi bi-tag"></i> 成色：<span th:text="${product.conditionLevel} ?: '未填写'">-</span></li>
+                    <li class="mb-1"><i class="bi bi-geo-alt"></i> 交易地点：<span th:text="${product.location} ?: '未填写'">-</span></li>
+                    <li class="mb-1"><i class="bi bi-grid"></i> 分类：<span th:text="${product.category != null ? product.category.name : '未分类'}">-</span></li>
+                    <li class="mb-1"><i class="bi bi-eye"></i> 浏览：<span th:text="${product.viewCount}">0</span> 次</li>
+                    <li class="mb-1">
+                        <i class="bi bi-info-circle"></i> 状态：
+                        <span class="badge"
+                              th:classappend="${product.status.name() == 'AVAILABLE'} ? 'bg-success' : (${product.status.name() == 'SOLD'} ? 'bg-secondary' : 'bg-warning')"
+                              th:text="${product.status.label}">在售</span>
+                    </li>
+                </ul>
+
+                <hr>
+
+                <!-- 卖家信息 -->
+                <div class="d-flex align-items-center mb-3">
+                    <div class="avatar-circle me-2" th:text="${#strings.substring(product.seller.username,0,1)}">U</div>
+                    <div>
+                        <a th:href="@{'/users/' + ${product.seller.id}}" class="fw-semibold text-decoration-none text-dark"
+                           th:text="${product.seller.username}">卖家</a>
+                        <div class="text-muted small">信用分 <span th:text="${product.seller.creditScore}">100</span></div>
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div sec:authorize="isAuthenticated()">
+                    <!-- 自己的商品：编辑/下架 -->
+                    <div th:if="${currentUser != null and currentUser.id == product.seller.id}">
+                        <a th:href="@{'/products/' + ${product.id} + '/edit'}" class="btn btn-outline-primary">编辑</a>
+                        <form th:action="@{'/products/' + ${product.id} + '/delete'}" method="post" class="d-inline"
+                              onsubmit="return confirm('确定要下架该商品吗？');">
+                            <button class="btn btn-outline-danger">下架</button>
+                        </form>
+                    </div>
+
+                    <!-- 别人的商品：购买/私聊 -->
+                    <div th:unless="${currentUser != null and currentUser.id == product.seller.id}">
+                        <button type="button" class="btn btn-gradient" data-bs-toggle="modal" data-bs-target="#buyModal"
+                                th:disabled="${product.status.name() != 'AVAILABLE'}">
+                            <span th:text="${product.status.name() == 'AVAILABLE'} ? '立即购买' : '不可购买'">购买</span>
+                        </button>
+                        <a th:href="@{'/messages/' + ${product.seller.id}(productId=${product.id})}"
+                           class="btn btn-outline-secondary">联系卖家</a>
+                    </div>
+                </div>
+                <div sec:authorize="!isAuthenticated()">
+                    <a th:href="@{/login}" class="btn btn-gradient">登录后购买</a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 商品描述 -->
+    <div class="card mt-4 p-4">
+        <h5>商品描述</h5>
+        <p style="white-space: pre-wrap;" th:text="${product.description} ?: '卖家很懒，什么都没写~'">描述</p>
+    </div>
+</div>
+
+<!-- 购买弹窗 -->
+<div class="modal fade" id="buyModal" tabindex="-1">
+    <div class="modal-dialog">
+        <form th:action="@{/orders}" method="post" class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">确认下单</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" name="productId" th:value="${product.id}">
+                <p>商品：<strong th:text="${product.title}">标题</strong></p>
+                <p>金额：<strong class="text-danger" th:text="'¥' + ${product.price}">¥0</strong></p>
+                <div class="mb-2">
+                    <label class="form-label">给卖家留言（可选）</label>
+                    <textarea name="remark" class="form-control" rows="2" placeholder="如：明天下午在图书馆交易可以吗？"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">取消</button>
+                <button type="submit" class="btn btn-gradient">确认下单</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

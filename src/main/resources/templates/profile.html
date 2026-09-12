@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('个人中心 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <div th:if="${success}" class="alert alert-success" th:text="${success}"></div>
+    <div th:if="${error}" class="alert alert-danger" th:text="${error}"></div>
+
+    <div class="row g-4">
+        <!-- 左侧：用户信息 + 统计 -->
+        <div class="col-md-4">
+            <div class="card p-4 text-center">
+                <div class="avatar-circle mx-auto mb-3" style="width:70px;height:70px;font-size:1.6rem;"
+                     th:text="${#strings.substring(user.username,0,1)}">U</div>
+                <h4 th:text="${user.username}">用户</h4>
+                <p class="text-muted mb-1" th:text="'信用分：' + ${user.creditScore}">信用分</p>
+                <p class="text-muted" th:text="'注册时间：' + ${#temporals.format(user.createdAt, 'yyyy-MM-dd')}">注册时间</p>
+
+                <div class="row text-center mt-3">
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" th:text="${boughtCount}">0</div>
+                        <small class="text-muted">买到</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" th:text="${soldCount}">0</div>
+                        <small class="text-muted">卖出</small>
+                    </div>
+                    <div class="col-4">
+                        <div class="fw-bold fs-5" th:text="${avgRating}">0</div>
+                        <small class="text-muted">评分</small>
+                    </div>
+                </div>
+
+                <div class="d-grid gap-2 mt-4">
+                    <a th:href="@{/products/my}" class="btn btn-outline-secondary btn-sm">我发布的商品</a>
+                    <a th:href="@{/orders/bought}" class="btn btn-outline-secondary btn-sm">我的订单</a>
+                    <a th:href="@{/messages}" class="btn btn-outline-secondary btn-sm">
+                        我的消息 <span class="badge bg-danger" th:if="${unreadCount > 0}" th:text="${unreadCount}">0</span>
+                    </a>
+                    <a th:href="@{/profile/password}" class="btn btn-outline-secondary btn-sm">修改密码</a>
+                </div>
+            </div>
+        </div>
+
+        <!-- 右侧：编辑信息 -->
+        <div class="col-md-8">
+            <div class="card p-4">
+                <h5 class="mb-4">编辑个人信息</h5>
+                <form th:action="@{/profile/update}" method="post">
+                    <div class="mb-3">
+                        <label class="form-label">用户名</label>
+                        <input type="text" class="form-control" th:value="${user.username}" disabled>
+                        <div class="form-text">用户名不可修改</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">邮箱</label>
+                        <input type="email" class="form-control" name="email" th:value="${user.email}" placeholder="请输入邮箱">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">手机号</label>
+                        <input type="tel" class="form-control" name="phone" th:value="${user.phone}" placeholder="请输入手机号">
+                    </div>
+                    <button type="submit" class="btn btn-gradient">保存修改</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

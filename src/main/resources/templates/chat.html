@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="zh-CN" xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<head th:replace="~{fragments/common :: head('聊天 - 校园二手交易系统')}"></head>
+<body>
+
+<nav th:replace="~{fragments/common :: navbar}"></nav>
+
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card">
+                <div class="card-header d-flex align-items-center">
+                    <a th:href="@{/messages}" class="text-decoration-none me-2"><i class="bi bi-arrow-left"></i></a>
+                    <div class="avatar-circle me-2" th:text="${#strings.substring(other.username,0,1)}">U</div>
+                    <div>
+                        <a th:href="@{'/users/' + ${other.id}}" class="fw-semibold text-decoration-none text-dark"
+                           th:text="${other.username}">对方</a>
+                        <div class="small text-muted">信用分 <span th:text="${other.creditScore}">100</span></div>
+                    </div>
+                </div>
+
+                <!-- 聊天记录 -->
+                <div class="card-body" style="height:420px; overflow-y:auto; background:#fafbfd;" id="chatBox">
+                    <div th:each="m : ${messages}" class="mb-3 d-flex"
+                         th:classappend="${m.sender.id == me.id} ? 'justify-content-end' : 'justify-content-start'">
+                        <div class="p-2 px-3 rounded"
+                             th:classappend="${m.sender.id == me.id} ? 'bg-primary text-white' : 'bg-white border'"
+                             style="max-width:75%;">
+                            <div th:text="${m.content}">消息</div>
+                            <div class="small"
+                                 th:classappend="${m.sender.id == me.id} ? 'text-white-50' : 'text-muted'"
+                                 th:text="${#temporals.format(m.createdAt, 'MM-dd HH:mm')}">时间</div>
+                        </div>
+                    </div>
+                    <div class="text-center text-muted" th:if="${#lists.isEmpty(messages)}">
+                        还没有消息，发条消息打个招呼吧
+                    </div>
+                </div>
+
+                <!-- 发送框 -->
+                <div class="card-footer">
+                    <form th:action="@{/messages}" method="post" class="d-flex gap-2">
+                        <input type="hidden" name="receiverId" th:value="${other.id}">
+                        <input type="hidden" name="productId" th:value="${productId}">
+                        <input type="text" name="content" class="form-control" placeholder="输入消息..." required autofocus>
+                        <button class="btn btn-gradient" type="submit">发送</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<footer th:replace="~{fragments/common :: footer}"></footer>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    var box = document.getElementById('chatBox');
+    if (box) box.scrollTop = box.scrollHeight;
+</script>
+</body>
+</html>
